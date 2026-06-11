@@ -10,6 +10,17 @@ import { PAGES, setScrollEl } from '../scrollBus'
 const SPACING = 14
 const DEPTH = (PAGES - 1) * SPACING // 98
 
+/* R3F pointer listeners are passive (preventDefault is ignored), so text
+   selection during 3D drags is suppressed by locking user-select instead. */
+const lockSelection = () => {
+  document.body.style.userSelect = 'none'
+  document.body.style.webkitUserSelect = 'none'
+}
+const unlockSelection = () => {
+  document.body.style.userSelect = ''
+  document.body.style.webkitUserSelect = ''
+}
+
 const BONE = '#efece6'
 const INK = '#1a1916'
 const RED = '#b3402a'
@@ -251,6 +262,7 @@ function AlignmentRoom({ z }: { z: number }) {
     }
     const up = () => {
       dragging.current = false
+      unlockSelection()
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
@@ -262,6 +274,7 @@ function AlignmentRoom({ z }: { z: number }) {
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation()
+    lockSelection()
     dragging.current = true
     lastX.current = e.clientX
   }

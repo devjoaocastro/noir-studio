@@ -933,6 +933,31 @@ em {
   }
 
   .practical {
-    gap: 22px;
+    gap: 18px;
+    margin-top: 20px;
+  }
+
+  /* compact the wall-text spread so everything fits one mobile viewport */
+  .walltext {
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .supporters {
+    margin-top: 16px;
+    font-size: 10px;
+  }
+
+  .access {
+    font-size: 10px;
+  }
+
+  /* the absolute © row overlapped the supporters/access copy on small
+     screens — flow it after the content instead */
+  .footer {
+    position: static;
+    margin-top: 18px;
+    flex-wrap: wrap;
+    gap: 10px 18px;
   }
 }
