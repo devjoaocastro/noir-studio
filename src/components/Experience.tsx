@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useFrame, useThree } from '@react-three/fiber'
+import { useFrame } from '@react-three/fiber'
 import { Html, RoundedBox, Sparkles, useCursor, useScroll } from '@react-three/drei'
 import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocessing'
 import { easing } from '../lib/easing'
@@ -265,7 +265,6 @@ function RoomCarousel() {
   const wrap = useRef<THREE.Group>(null!)
   const labels = useRef<(HTMLDivElement | null)[]>([])
   const scroll = useScroll()
-  const { gl } = useThree()
   const [hovered, setHovered] = useState(false)
 
   const drag = useRef({
@@ -345,6 +344,31 @@ function RoomCarousel() {
     })
   })
 
+  const endDrag = () => {
+    const d = drag.current
+    if (!d.active) return
+    d.active = false
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    if (Math.abs(d.vel) < 0.35) {
+      d.target = Math.round(d.rot / STEP) * STEP
+      d.snapping = true
+    }
+  }
+
+  // safety net: never leave the platter stuck in "dragging" if the
+  // pointer is released outside the carousel hit area
+  useEffect(() => {
+    const up = () => endDrag()
+    window.addEventListener('pointerup', up)
+    window.addEventListener('pointercancel', up)
+    return () => {
+      window.removeEventListener('pointerup', up)
+      window.removeEventListener('pointercancel', up)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   const onDown = (e: any) => {
     e.stopPropagation()
     const d = drag.current
@@ -354,7 +378,12 @@ function RoomCarousel() {
     d.startRot = d.rot
     d.vel = 0
     document.body.style.cursor = 'grabbing'
-    gl.domElement.setPointerCapture?.(e.pointerId)
+    // body has user-select:none; clear any pre-existing selection too
+    document.body.style.userSelect = 'none'
+    window.getSelection?.()?.removeAllRanges?.()
+    // R3F-managed capture: move/up keep flowing to this mesh even when
+    // the pointer leaves its silhouette mid-drag
+    ;(e.target as Element).setPointerCapture?.(e.pointerId)
   }
 
   const onMove = (e: any) => {
@@ -368,15 +397,10 @@ function RoomCarousel() {
   }
 
   const onUp = (e: any) => {
-    const d = drag.current
-    if (!d.active) return
-    d.active = false
-    document.body.style.cursor = hovered ? 'grab' : 'auto'
-    gl.domElement.releasePointerCapture?.(e.pointerId)
-    if (Math.abs(d.vel) < 0.35) {
-      d.target = Math.round(d.rot / STEP) * STEP
-      d.snapping = true
-    }
+    if (!drag.current.active) return
+    ;(e.target as Element).releasePointerCapture?.(e.pointerId)
+    endDrag()
+    document.body.style.cursor = hovered ? 'grab' : ''
   }
 
   const accents = ['#c97b8e', '#c9a36a', '#8e6aa8']
