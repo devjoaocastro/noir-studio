@@ -296,6 +296,9 @@ function Rov() {
   const onDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation()
     ;(e.target as Element).setPointerCapture(e.pointerId)
+    // body has user-select:none; clear any pre-existing selection too
+    document.body.style.userSelect = 'none'
+    window.getSelection?.()?.removeAllRanges?.()
     setDragging(true)
   }
   const onMove = (e: ThreeEvent<PointerEvent>) => {
@@ -310,6 +313,7 @@ function Rov() {
   }
   const onUp = (e: ThreeEvent<PointerEvent>) => {
     ;(e.target as Element).releasePointerCapture(e.pointerId)
+    document.body.style.userSelect = ''
     setDragging(false)
   }
 

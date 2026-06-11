@@ -18,6 +18,9 @@ body,
 
 body {
   margin: 0;
+  /* immersive canvas site: 3D drags must never start a text-selection */
+  -webkit-user-select: none;
+  user-select: none;
   background: var(--abyss);
   color: var(--foam);
   font-family: 'Space Grotesk', system-ui, sans-serif;
