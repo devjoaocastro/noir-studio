@@ -17,6 +17,17 @@ import {
 /** Globe radius */
 const R = 2.2
 
+/* R3F pointer listeners are passive (preventDefault is ignored), so text
+   selection during 3D drags is suppressed by locking user-select instead. */
+const lockSelection = () => {
+  document.body.style.userSelect = 'none'
+  document.body.style.webkitUserSelect = 'none'
+}
+const unlockSelection = () => {
+  document.body.style.userSelect = ''
+  document.body.style.webkitUserSelect = ''
+}
+
 /** Shared so the compass needle can read the globe's drag rotation. */
 const spinRotShared = { value: 0 }
 
@@ -183,6 +194,12 @@ function Pin({ index, dest }: { index: number; dest: Destination }) {
       }}
       onPointerOut={() => setHovered(false)}
     >
+      {/* invisible hit sphere — the visible head is ~10px on screen, far too
+          small a click target; this makes the whole pin area clickable */}
+      <mesh position={[0, 0.28, 0]}>
+        <sphereGeometry args={[0.32, 12, 12]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
       {/* mast */}
       <mesh position={[0, 0.15, 0]}>
         <cylinderGeometry args={[0.012, 0.012, 0.3, 8]} />
@@ -335,6 +352,7 @@ function GlobeSystem() {
     }
     const onUp = () => {
       drag.current.active = false
+      unlockSelection()
     }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
@@ -359,6 +377,7 @@ function GlobeSystem() {
 
   const startDrag = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation()
+    lockSelection()
     const d = drag.current
     d.active = true
     d.target = null
