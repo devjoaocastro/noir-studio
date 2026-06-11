@@ -19,6 +19,17 @@ const SILVER = '#d6d6d6'
 const RED = '#e3342f'
 const WARM = '#ffe9c9'
 
+/* R3F pointer listeners are passive (preventDefault is ignored), so text
+   selection during 3D drags is suppressed by locking user-select instead. */
+const lockSelection = () => {
+  document.body.style.userSelect = 'none'
+  document.body.style.webkitUserSelect = 'none'
+}
+const unlockSelection = () => {
+  document.body.style.userSelect = ''
+  document.body.style.webkitUserSelect = ''
+}
+
 /* ------------------------------------------------------------------ */
 /* Section wrapper — fades/scales/rotates its content as it enters     */
 /* and leaves the viewport while we scroll through the 3D world.       */
@@ -258,7 +269,9 @@ function CameraDolly() {
       />
       <group ref={rig}>
         <FilmCameraModel />
-        <pointLight intensity={6} distance={5} color={SILVER} />
+        {/* tight falloff: at distance 5 this lamp washed the scrub-room
+            platform into a blank white disc as the dolly passed it */}
+        <pointLight intensity={4} distance={2.2} color={SILVER} />
       </group>
     </group>
   )
@@ -418,10 +431,12 @@ function LensStack() {
 function MiniatureSet({ lightRig }: { lightRig: RefObject<THREE.Group | null> }) {
   return (
     <group>
-      {/* platform */}
+      {/* platform — matte + near-zero env reflection: grazing-angle fresnel
+          off the bright Environment turned this cap into a blank white disc
+          when seen from below during the section 3 → 4 transition */}
       <mesh position={[0, -0.06, 0]}>
         <cylinderGeometry args={[1.75, 1.85, 0.12, 48]} />
-        <meshStandardMaterial color="#0a0a0a" metalness={0.5} roughness={0.5} />
+        <meshStandardMaterial color="#070707" metalness={0.05} roughness={0.95} envMapIntensity={0.08} />
       </mesh>
       {/* table */}
       <mesh position={[0, 0.42, 0]}>
@@ -488,6 +503,7 @@ function ScrubRoom() {
 
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation()
+    lockSelection()
     dragging.current = true
     let lastX = e.clientX
     const move = (ev: PointerEvent) => {
@@ -499,6 +515,7 @@ function ScrubRoom() {
     }
     const up = () => {
       dragging.current = false
+      unlockSelection()
       window.removeEventListener('pointermove', move)
     }
     window.addEventListener('pointermove', move)

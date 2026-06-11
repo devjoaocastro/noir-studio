@@ -835,4 +835,14 @@ em {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .footer-links {
+    flex-wrap: wrap;
+    column-gap: 18px;
+    row-gap: 6px;
+  }
+
+  .footer-links a {
+    white-space: nowrap;
+  }
 }
