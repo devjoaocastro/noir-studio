@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import * as THREE from 'three'
-import { useFrame } from '@react-three/fiber'
+import { useFrame, useThree } from '@react-three/fiber'
 import { Html, Sparkles, useCursor, useScroll } from '@react-three/drei'
 import { EffectComposer, Bloom, Noise, Vignette } from '@react-three/postprocessing'
 import { easing } from '../lib/easing'
@@ -18,7 +18,7 @@ const SECTION_POS: [number, number, number][] = [
   [-2.3, -0.1, 0], // 2 pyramid — panel right, flacon left
   [0, -0.35, 1.6], // 3 eau — close-up
   [-2.5, -0.3, 0], // 4 rituals — text right
-  [0, -0.85, 0.4], // 5 collection — centre, low
+  [2.3, -0.6, 0.4], // 5 collection — right of the eaux list, low
   [2.5, 0.25, -0.6], // 6 atelier — small, off to the side
   [0, 0.55, -1.2], // 7 footer — receding above the seal
 ]
@@ -26,6 +26,17 @@ const SECTION_ROT = [0.45, 1.35, 0.85, 0.1, 2.3, 0.6, 1.9, 3.6]
 const SECTION_SCALE = [1.55, 1.05, 1.0, 1.85, 1.0, 1.25, 0.78, 0.6]
 
 const smooth = (t: number) => t * t * (3 - 2 * t)
+
+/* R3F pointer listeners are passive (preventDefault is ignored), so text
+   selection during 3D drags is suppressed by locking user-select instead. */
+const lockSelection = () => {
+  document.body.style.userSelect = 'none'
+  document.body.style.webkitUserSelect = 'none'
+}
+const unlockSelection = () => {
+  document.body.style.userSelect = ''
+  document.body.style.webkitUserSelect = ''
+}
 
 function sectionLerp(sec: number, table: number[]) {
   const i0 = Math.min(table.length - 1, Math.max(0, Math.floor(sec)))
@@ -96,6 +107,11 @@ function Flacon() {
   const group = useRef<THREE.Group>(null!)
   const stopper = useRef<THREE.Group>(null!)
   const scroll = useScroll()
+  const vw = useThree((s) => s.viewport.width)
+  // narrow screens: pull the flacon towards centre and shrink it so it
+  // never buries the hero copy or drifts off-frame on mobile
+  const xFit = THREE.MathUtils.clamp(vw / 10.5, 0.34, 1)
+  const sizeFit = THREE.MathUtils.clamp(0.55 + xFit * 0.45, 0.7, 1)
   const [hovered, setHovered] = useState(false)
   const [grabbed, setGrabbed] = useState(false)
   useCursor(hovered || grabbed, grabbed ? 'grabbing' : 'grab')
@@ -137,6 +153,7 @@ function Flacon() {
     const up = () => {
       drag.current.active = false
       setGrabbed(false)
+      unlockSelection()
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
@@ -152,12 +169,14 @@ function Flacon() {
     const sec = o * (PAGES - 1)
 
     // glide between section marks
-    const px = sectionLerp(sec, SECTION_POS.map((p) => p[0]))
-    const py = sectionLerp(sec, SECTION_POS.map((p) => p[1]))
+    const px = sectionLerp(sec, SECTION_POS.map((p) => p[0])) * xFit
+    // on narrow screens also sink the flacon a little so the stopper
+    // never sits on top of the hero tagline
+    const py = sectionLerp(sec, SECTION_POS.map((p) => p[1])) - (1 - xFit) * 0.9
     const pz = sectionLerp(sec, SECTION_POS.map((p) => p[2]))
     easing.damp3(group.current.position, [px, py + Math.sin(state.clock.elapsedTime * 0.9) * 0.06, pz], 0.45, delta)
 
-    const s = sectionLerp(sec, SECTION_SCALE)
+    const s = sectionLerp(sec, SECTION_SCALE) * sizeFit
     easing.damp3(group.current.scale, s, 0.45, delta)
 
     // drag inertia: keep spinning after release, slowly settle
@@ -195,6 +214,7 @@ function Flacon() {
       onPointerOut={() => setHovered(false)}
       onPointerDown={(e) => {
         e.stopPropagation()
+        lockSelection()
         const d = drag.current
         d.active = true
         d.px = e.clientX
