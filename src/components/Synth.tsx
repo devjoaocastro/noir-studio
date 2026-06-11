@@ -111,6 +111,9 @@ function Knob({
   const onPointerDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation()
     ;(e.target as unknown as Element).setPointerCapture(e.pointerId)
+    // body has user-select:none; clear any pre-existing selection too
+    document.body.style.userSelect = 'none'
+    window.getSelection?.()?.removeAllRanges?.()
     drag.current = { y: e.clientY, v: value }
   }
 
@@ -123,6 +126,7 @@ function Knob({
 
   const onPointerUp = (e: ThreeEvent<PointerEvent>) => {
     drag.current = null
+    document.body.style.userSelect = ''
     ;(e.target as unknown as Element).releasePointerCapture(e.pointerId)
   }
 
