@@ -218,10 +218,11 @@ function ArcadeFooter() {
   const game = useGameState()
   const score = scoreOf(game)
   const yourScore = score * 11111
+  // a real arcade board is sorted — slot YOU in by score, not at the top
   const rows: [string, number, boolean][] = [
     ...(score > 0 ? ([['YOU', yourScore, true]] as [string, number, boolean][]) : []),
     ...HIGH_SCORES.map(([n, s]) => [n, s, false] as [string, number, boolean]),
-  ]
+  ].sort((a, b) => b[1] - a[1])
 
   return (
     <div className="arcade">

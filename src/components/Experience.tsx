@@ -398,11 +398,13 @@ function TargetCube({
 }
 
 const TARGET_POSITIONS: [number, number, number][] = [
-  [-4.2, 2.6, -49],
-  [-2.1, 3.6, -51],
-  [0, 2.2, -50],
-  [2.2, 3.4, -51.5],
-  [4.3, 2.7, -49.5],
+  // ~10–12 units ahead of the Playground viewpoint (camera z=-44) so all
+  // five cubes sit inside the frustum at the exact section stop
+  [-4.2, 2.6, -54],
+  [-2.1, 3.6, -56],
+  [0, 2.2, -55],
+  [2.2, 3.4, -56.5],
+  [4.3, 2.7, -54.5],
 ]
 
 function Playground({ burst }: { burst: React.RefObject<BurstHandle | null> }) {
@@ -413,7 +415,7 @@ function Playground({ burst }: { burst: React.RefObject<BurstHandle | null> }) {
       {TARGET_POSITIONS.map((p, i) => (
         <TargetCube key={i} index={i} position={p} burst={burst} />
       ))}
-      <Html center position={[0, 5, -50]} className="pin-html" zIndexRange={[20, 0]}>
+      <Html center position={[0, 5.4, -55]} className="pin-html" zIndexRange={[20, 0]}>
         <div ref={label} className="pin-label" style={{ opacity: 0, display: 'none' }}>
           <strong>TARGET RANGE</strong>
           <span>smash the cubes</span>
@@ -446,6 +448,7 @@ function Controller({ position }: { position: [number, number, number] }) {
     }
     const onUp = () => {
       dragging.current = false
+      document.body.style.userSelect = ''
     }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
@@ -475,6 +478,9 @@ function Controller({ position }: { position: [number, number, number] }) {
         onPointerDown={(e) => {
           e.stopPropagation()
           dragging.current = true
+          // body has user-select:none; clear any pre-existing selection
+          document.body.style.userSelect = 'none'
+          window.getSelection?.()?.removeAllRanges?.()
         }}
         onPointerOver={(e) => {
           e.stopPropagation()
@@ -558,9 +564,10 @@ function CraftPillars({ z }: { z: number }) {
   const spec = useMemo(
     () =>
       [
+        // keep the walking camera path (x ≈ ±1.2) clear — no pillar at x=0
         { x: -6.2, h: 5.2, c: EMBER },
-        { x: 0, h: 7, c: PIXEL },
-        { x: 6.2, h: 5.8, c: STEEL },
+        { x: 2.9, h: 7, c: PIXEL },
+        { x: 7.4, h: 5.8, c: STEEL },
       ] as const,
     [],
   )
@@ -811,10 +818,13 @@ export default function Experience() {
 
       {/* 4 — tech & craft: pillars + draggable controller */}
       <CraftPillars z={-76} />
-      <Controller position={[1.6, 2.75, -67]} />
+      <Controller position={[2.4, 3.0, -67]} />
 
-      {/* 5 — devlog: the forge pit */}
-      <ForgePit z={-86} />
+      {/* 5 — devlog: the forge pit (off-axis so the camera walks BESIDE
+          the fire, not through a whiteout of embers) */}
+      <group position={[3.4, 0, 0]}>
+        <ForgePit z={-86} />
+      </group>
 
       {/* 6 — careers: a second anvil waits for new smiths */}
       <group position={[3.5, 0, -104]} rotation={[0, -0.5, 0]}>

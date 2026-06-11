@@ -20,6 +20,9 @@ body,
 
 body {
   margin: 0;
+  /* immersive canvas site: 3D drags must never start a text-selection */
+  -webkit-user-select: none;
+  user-select: none;
   background: var(--bg);
   color: var(--fg);
   font-family: 'Space Grotesk', system-ui, sans-serif;
@@ -993,6 +996,11 @@ em {
   .arcade__columns {
     flex-wrap: wrap;
     gap: 22px;
+  }
+
+  /* the floating 3D pins land on top of the copy on small screens */
+  .pin-label {
+    display: none;
   }
 
   .section[data-num]::before {
