@@ -793,6 +793,19 @@ em {
 .accordion {
   width: min(620px, 84vw);
   pointer-events: auto;
+  /* card backdrop — the panel field renders right behind this list and
+     made the bare text illegible */
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 6px 22px 10px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  transition: background-color 1s ease, border-color 1s ease;
+}
+
+.accordion__item:last-child {
+  border-bottom: none;
 }
 
 .accordion__item {
@@ -1135,6 +1148,14 @@ em {
   }
 
   .footer-cols {
-    gap: 30px;
+    gap: 22px 30px;
+    /* the 3D panel field sits behind the footer on small screens —
+       give the link columns a theme-aware card so they stay readable */
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 18px 20px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
   }
 }

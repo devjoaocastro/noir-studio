@@ -12,6 +12,17 @@ import { world, billToCount, PANEL_MAX } from '../store'
 /* world.blend (0 = day, 1 = night), driven by the header toggle.      */
 /* ------------------------------------------------------------------ */
 
+/* R3F pointer listeners are passive (preventDefault is ignored), so text
+   selection during 3D drags is suppressed by locking user-select instead. */
+const lockSelection = () => {
+  document.body.style.userSelect = 'none'
+  document.body.style.webkitUserSelect = 'none'
+}
+const unlockSelection = () => {
+  document.body.style.userSelect = ''
+  document.body.style.webkitUserSelect = ''
+}
+
 const DAY_BG = new THREE.Color('#cfe8ff')
 const NIGHT_BG = new THREE.Color('#071426')
 const DAY_LIGHT = new THREE.Color('#fff3d0')
@@ -23,9 +34,11 @@ const MOON_NIGHT = new THREE.Color('#e6eefb').multiplyScalar(1.7)
 const FLOW_DAY = new THREE.Color('#ffb928')
 const FLOW_NIGHT = new THREE.Color('#cfe0ff')
 
-/* Sun arc geometry: the sun travels a semicircle over the field. */
+/* Sun arc geometry: the sun travels a semicircle over the field.
+   ARC_H is kept low enough that the orb (and its drag hint) stays inside
+   the viewport below the header on the hero shot. */
 const ARC_R = 22
-const ARC_H = 13
+const ARC_H = 9.5
 const ARC_Z = -14
 
 function arcPoint(u: number, out: THREE.Vector3) {
@@ -46,6 +59,10 @@ function SunMoon() {
   const light = useRef<THREE.PointLight>(null!)
   const hint = useRef<HTMLDivElement>(null)
   const scroll = useScroll()
+  const aspect = useThree((s) => s.viewport.aspect)
+  // narrow screens: squeeze the arc horizontally so the sun never leaves
+  // the frame on mobile (the hero invites the user to drag it)
+  const xFit = THREE.MathUtils.clamp(aspect / 1.6, 0.34, 1)
   const [hovered, setHovered] = useState(false)
   useCursor(hovered)
 
@@ -54,6 +71,7 @@ function SunMoon() {
   useEffect(() => {
     const up = () => {
       world.draggingSun = false
+      unlockSelection()
     }
     window.addEventListener('pointerup', up)
     window.addEventListener('pointercancel', up)
@@ -65,6 +83,7 @@ function SunMoon() {
 
   const onDown = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation()
+    lockSelection()
     world.draggingSun = true
   }
 
@@ -75,6 +94,7 @@ function SunMoon() {
     }
     easing.damp(u, 'current', world.sunU, world.draggingSun ? 0.06 : 0.25, delta)
     arcPoint(u.current, group.current.position)
+    group.current.position.x *= xFit
     world.sunPos.copy(group.current.position)
 
     const b = world.blend
@@ -116,7 +136,7 @@ function SunMoon() {
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
       <pointLight ref={light} distance={90} decay={0.6} />
-      <Html center position={[0, 3.6, 0]} className="orb-html" zIndexRange={[20, 0]}>
+      <Html center position={[0, -2.9, 0]} className="orb-html" zIndexRange={[20, 0]}>
         <div ref={hint} className="orb-hint" style={{ opacity: 0, display: 'none' }}>
           <strong>← drag the sun →</strong>
           <span>the field follows</span>
