@@ -29,6 +29,9 @@ body,
 
 body {
   margin: 0;
+  /* immersive canvas site: 3D drags must never start a text-selection */
+  -webkit-user-select: none;
+  user-select: none;
   background: var(--paper);
   color: var(--ink);
   font-family: 'Space Grotesk', system-ui, sans-serif;
@@ -597,12 +600,13 @@ em {
 
 .speakers {
   list-style: none;
-  margin: 0;
+  /* centered so the floating 3D frames flank it instead of covering names */
+  margin: 0 auto;
   padding: 0;
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 2px;
-  width: min(940px, 84vw);
+  width: min(880px, 76vw);
   background: rgba(22, 22, 26, 0.08);
   border: 2px solid rgba(22, 22, 26, 0.08);
 }
@@ -1010,10 +1014,24 @@ em {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  /* sections are locked to 100vh by ScrollControls — stacked cards would
+     overflow into the next section, so swipe them horizontally instead */
   .workshops,
   .tiers {
-    grid-template-columns: 1fr;
+    display: flex;
+    grid-template-columns: none;
     gap: 14px;
+    width: 92vw;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    padding-bottom: 14px;
+  }
+
+  .ws-card,
+  .tier {
+    flex: 0 0 78vw;
+    scroll-snap-align: center;
   }
 
   .footer-grid {
@@ -1036,6 +1054,11 @@ em {
 
   .section--top {
     padding-top: 11vh;
+  }
+
+  /* keep the hero kicker clear of the fixed header */
+  .section--hero {
+    padding-top: 13vh;
   }
 
   .section--left h2,

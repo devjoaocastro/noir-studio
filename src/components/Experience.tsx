@@ -164,6 +164,7 @@ function PrismRig({ x, y }: { x: number; y: number }) {
       if (!dragging.current) return
       dragging.current = false
       document.body.style.cursor = 'grab'
+      document.body.style.userSelect = ''
     }
     window.addEventListener('pointermove', move)
     window.addEventListener('pointerup', up)
@@ -203,6 +204,9 @@ function PrismRig({ x, y }: { x: number; y: number }) {
             lastX.current = e.clientX
             vel.current = 0
             document.body.style.cursor = 'grabbing'
+            // body has user-select:none; clear any pre-existing selection
+            document.body.style.userSelect = 'none'
+            window.getSelection?.()?.removeAllRanges?.()
           }}
           onPointerOver={(e) => {
             e.stopPropagation()
@@ -256,7 +260,9 @@ function Shards({ vw, vh }: { vw: number; vh: number }) {
       const side = i % 2 === 0 ? -1 : 1
       const page = (i / 13) * (PAGES - 1)
       arr.push({
-        pos: [side * vw * rng(0.32, 0.46), -page * vh + rng(-1.4, 1.4), rng(-3.2, -1.2)],
+        // hug the page margins (shallow z keeps the projection from pulling
+        // them inwards over the text columns)
+        pos: [side * vw * rng(0.42, 0.5), -page * vh + rng(-1.4, 1.4), rng(-2.0, -1.0)],
         scale: rng(0.16, 0.42),
         speed: rng(0.2, 0.55),
         seed: rng(0, Math.PI * 2),
@@ -480,7 +486,7 @@ const TIER_COLORS = ['#3aa655', '#1f8fde', '#7b2fbe']
 function TicketTotems({ position, vw }: { position: [number, number, number]; vw: number }) {
   const group = useRef<THREE.Group>(null!)
   const geo = useMemo(() => {
-    const g = new THREE.CylinderGeometry(0.42, 0.42, 0.36, 3, 1)
+    const g = new THREE.CylinderGeometry(0.34, 0.34, 0.3, 3, 1)
     g.rotateX(Math.PI / 2)
     return g
   }, [])
@@ -497,7 +503,8 @@ function TicketTotems({ position, vw }: { position: [number, number, number]; vw
   return (
     <group ref={group} position={position}>
       {TIER_COLORS.map((c, i) => (
-        <mesh key={c} geometry={geo} position={[(i - 1) * vw * 0.3, 0, -3.2]}>
+        // deep + small: background accents that never sit on the headline
+        <mesh key={c} geometry={geo} position={[(i - 1) * vw * 0.34, 0.4, -6.5]}>
           <meshStandardMaterial color={c} roughness={0.35} metalness={0.15} flatShading />
         </mesh>
       ))}
